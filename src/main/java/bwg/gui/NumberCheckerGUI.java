@@ -18,6 +18,7 @@ public class NumberCheckerGUI extends Application {
     public void start(Stage primaryStage) throws IOException {
         Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("gui-fxml.fxml"));
                 //getResource("../../../resources/gui-fxml.fxml"));
+
         primaryStage.setTitle("NumberCheckerGUI Beta");
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
