@@ -1,0 +1,52 @@
+.root {
+    -fx-background-image: url("background.jpg");
+}
+.label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-effect: dropshadow( gaussian , rgba(255,255,255,0.5) , 0,0,0,1 );
+}
+.button {
+    -fx-text-fill: white;
+    -fx-font-family: "Arial Narrow";
+    -fx-font-weight: bold;
+    -fx-background-color: linear-gradient(#61a2b1, #2A5058);
+    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.6) , 5, 0.0 , 0 , 1 );
+}
+.button:hover {
+    -fx-background-color: linear-gradient(#2A5058, #61a2b1);
+}
+
+.gui-exit-button {
+    -fx-opacity: 150%;
+    -fx-graphic: url("window_close_icon.png");
+    -fx-background-color: RGBA(0,0,0,0);
+}
+.gui-exit-button:hover {
+    -fx-graphic: url("window_close_icon.png");
+    -fx-background-color: RGBA(0,0,0,0.4);
+}
+.gui-min-button {
+    -fx-graphic: url("window_min_icon.png");
+    -fx-background-color: RGBA(0,0,0,0);
+}
+.gui-min-button:hover {
+    -fx-graphic: url("window_min_icon.png");
+    -fx-background-color: RGBA(0,0,0,0.4);
+}
+.gui-button-start {
+    -fx-background-color: RGBA(0,0,0,0);
+}
+.gui-button-start:hover{
+    -fx-background-color: RGBA(0,0,0,0.4);
+}
+
+.gui-button {
+    -fx-background-color: #871417;
+    -fx-text-fill: white;
+}
+.gui-button:hover{
+    -fx-text-fill: white;
+    -fx-background-color: #5b0000;
+    -fx-opacity: 0.7;
+}

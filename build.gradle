@@ -1,0 +1,72 @@
+buildscript {
+    dependencies {
+        classpath group: 'de.dynamicfiles.projects.gradle.plugins', name: 'javafx-gradle-plugin', version: '8.8.2'
+    }
+    repositories {
+        mavenLocal()
+        mavenCentral()
+
+    }
+}
+apply plugin: 'java'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+dependencies{
+    compile group: 'org.apache.poi', name: 'poi-ooxml', version: '3.15'
+}
+apply plugin: 'javafx-gradle-plugin'
+
+
+jfx {
+    // minimal requirement for jfxJar-task
+    mainClass = 'bwg.gui.NumberCheckerGUI'
+    jfxAppOutputDir = "build/jfx/app"
+    jfxMainAppJarName = "NumberChecker-E-jfx.jar"
+    libFolderName = "lib"
+    // minimal requirement for jfxNative-task
+
+
+    identifier = null  // String - setting this for windows-bundlers makes it possible to generate upgradeable installers (using same GUID)
+    vendor = "some serious business corp."
+    nativeOutputDir = "build/jfx/native"
+    bundler = "ALL" // set this to some specific, if your don't want all bundlers running, examples "windows.app", "jnlp", ...
+    jvmProperties = null // Map<String, String>
+    jvmArgs = ["-Xmx1g"] // List<String>
+    userJvmArgs = null // Map<String, String>
+    launcherArguments = null // List<String>
+    nativeReleaseVersion = "1.0"
+    needShortcut = false
+    needMenu = false
+    bundleArguments = [
+            // dont bundle JRE (not recommended, but increases build-size/-speed)
+            runtime: null
+    ]
+    appName = "NumberChecker" // this is used for files below "src/main/deploy", e.g. "src/main/deploy/package/windows/project.ico"
+    additionalBundlerResources = null // path to some additional resources for the bundlers when creating application-bundle
+    additionalAppResources = null // path to some additional resources when creating application-bundle
+    secondaryLaunchers = [[appName:"somethingDifferent"], [appName:"somethingDifferent2"]]
+    fileAssociations = null // List<Map<String, Object>>
+    noBlobSigning = false // when using bundler "jnlp", you can choose to NOT use blob signing
+    customBundlers = null // List<String>
+    failOnError = false
+    onlyCustomBundlers = false
+    skipJNLP = false
+    skipNativeVersionNumberSanitizing = false // anything than numbers or dots are removed
+    additionalJarsignerParameters = null // List<String>
+    skipMainClassScanning = false // set to true might increase build-speed
+
+    skipNativeLauncherWorkaround124 = false
+    skipNativeLauncherWorkaround167 = false
+    skipNativeLauncherWorkaround205 = false
+    skipJNLPRessourcePathWorkaround182 = false
+    skipSigningJarFilesJNLP185 = false
+    skipSizeRecalculationForJNLP185 = false
+    skipMacBundlerWorkaround = false
+
+    // gradle jfxRun
+    runJavaParameter = "-Xmx1g" // String
+    runAppParameter = null // String
+}
