@@ -19,39 +19,62 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AppExp {
-
     private static String FILE_NAME_IN = ".\\data2.xlsx";
     //private static final String FILE_NAME_OUT = ".\\file-out.xlsx";
     private static boolean DETAILS = true;
-    private static String MASC_SCAN = "";
+    private static String CALLER_MASC_SCAN = "";
+    private static String DESTINATION_MASC_SCAN = "";
+    private static int ACTION = 0;
     private static String SORT = "time";
 
+    private boolean DESTROY = false;
+    private Thread pauseThread = null;
 
     private ArrayList<Call> calls = new ArrayList<>();
     private String periodT1 = "", periodT2 = "";
 
     private TextArea printOut = null;
+    private javafx.scene.control.Button btscan = null;
 
-    public AppExp(TextArea textArea, String inputFile, boolean detail, String mask, String sort){
+    public AppExp(int action,
+                  TextArea textArea,
+                  javafx.scene.control.Button bt,
+                  String inputFile,
+                  boolean detail,
+                  String callermask,
+                  String destonationMask,
+                  String sort){
         this.printOut = textArea;
+        this.btscan = bt;
 
         calls = new ArrayList<>();
 
+        ACTION = action;
         SORT = sort;
         DETAILS = detail;
-        MASC_SCAN = mask;
+        CALLER_MASC_SCAN = callermask;
+        DESTINATION_MASC_SCAN = destonationMask;
         FILE_NAME_IN = inputFile;
+
         Core();
     }
 
     public static void main(String[] args) {
-        new AppExp(null, FILE_NAME_IN, true, "", "time");
+        new AppExp(
+                0,
+                null,
+                null,
+                FILE_NAME_IN,
+                true,
+                "",
+                "",
+                "time");
     }
 
     private void Core(){
-        Thread pauseThread = new Thread(() -> {
+        pauseThread = new Thread(() -> {
             print("scan [" + FILE_NAME_IN + "]\n");
-            while (true) {
+            while (!DESTROY) {
                 try {
                     print(".");
                     Thread.sleep(1000);
@@ -68,9 +91,8 @@ public class AppExp {
         try {
             fis = new FileInputStream(dataFile);
         } catch (FileNotFoundException e) {
-            //e.printStackTrace();
             print("\n File not found!");
-            pauseThread.stop();
+            destroy();
             return;
         }
 
@@ -79,8 +101,7 @@ public class AppExp {
             workBook = new XSSFWorkbook(fis);
         } catch (Exception e) {
             print("\n Numbers not found!");
-            //e.printStackTrace();
-            pauseThread.stop();
+            destroy();
             return;
         }
         XSSFSheet sheet = workBook.getSheetAt(0);
@@ -88,7 +109,11 @@ public class AppExp {
         Iterator<Row> rowIterator = sheet.iterator();
 
         //int iterator = 0;
-        while (rowIterator.hasNext()) {
+        while (rowIterator.hasNext() && !DESTROY) {
+            if (DESTROY){
+                break;
+            }
+
             Row row = rowIterator.next();
 
             Cell callCell = row.getCell(3);
@@ -101,52 +126,49 @@ public class AppExp {
             String datacall = cellTypeToString(datacallCell);
             String calltime = cellTypeToString(calltimeCell);
 
-            if (Objects.equals(periodT1, ""))
+            if (Objects.equals(periodT1, "") || Objects.equals(periodT1, "Call Date"))
                 periodT1 = datacall;
             periodT2 = datacall;
+            // ACTIONs
+            switch (ACTION){
 
-            //if mack true
-            if(Objects.equals(MASC_SCAN, "")) {
-                if (!localNumberInline(callid)) {
-                    continue;
-                }
-                boolean numberTrue = true;
-                if (numberInline(destination)) {
-                    for (Call c : calls) {
-                        if (Objects.equals(c.getCallerID().toString(), callid)) {
-                            calls.get(calls.indexOf(c)).addDestination(new Number(destination, datacall, calltime));
+                // search by mask
+                case 1: {
+                    if (!Objects.equals(CALLER_MASC_SCAN, "") && !maskNumberInline(CALLER_MASC_SCAN, callid))
+                        continue;
+                    if (!Objects.equals(DESTINATION_MASC_SCAN, "") && !maskNumberInline(DESTINATION_MASC_SCAN, destination))
+                        continue;
 
-                            numberTrue = false;
-                            break;
-                        }
-                    }
-                    if (numberTrue) {
-                        Call call = new Call(new Number(callid, null, "0:0"));
-                        call.addDestination(new Number(destination, datacall, calltime));
-                        calls.add(call);
-                    }
-                }
-            } else {
-                if (Objects.equals(periodT1, ""))
-                    periodT1 = datacall;
-                periodT2 = datacall;
+                    scan(callid, destination, datacall, calltime);
 
-                if (!maskNumberInline(MASC_SCAN, callid)) {
-                    continue;
-                }
-                boolean numberTrue = true;
-                for (Call c : calls) {
-                    if (Objects.equals(c.getCallerID().toString(), callid)) {
-                        calls.get(calls.indexOf(c)).addDestination(new Number(destination, datacall, calltime));
+                    break;
 
-                        numberTrue = false;
-                        break;
-                    }
                 }
-                if (numberTrue) {
-                    Call call = new Call(new Number(callid, null, "0:0"));
-                    call.addDestination(new Number(destination, datacall, calltime));
-                    calls.add(call);
+                //time > 15 min
+                case 2: {
+                    try {
+                        if (Integer.parseInt(calltime.split(":")[0]) < 15)
+                            continue;
+
+                        scan(callid, destination, datacall, calltime);
+                    } catch (NumberFormatException ignored) {}
+                    break;
+                }
+                //total time > 450 min
+                case 3: {
+                    scan(callid, destination, datacall, calltime);
+                    break;
+                }
+                //default search
+                default: {
+                    if (!localNumberInline(callid))
+                        continue;
+                    if (!numberInline(destination))
+                        continue;
+
+                    scan(callid, destination, datacall, calltime);
+
+                    break;
                 }
             }
         }
@@ -157,7 +179,7 @@ public class AppExp {
 
         printAll(DETAILS);
 
-
+        destroy();
     }
 
     /**
@@ -204,13 +226,30 @@ public class AppExp {
         }
     }
 
+    private void scan(String callid, String destination, String datacall, String calltime){
+        boolean numberTrue = true;
+        for (Call c : calls) {
+            if (Objects.equals(c.getCallerID().toString(), callid)) {
+                calls.get(calls.indexOf(c)).addDestination(new Number(destination, datacall, calltime));
+
+                numberTrue  = false;
+                break;
+            }
+        }
+        if (numberTrue) {
+            Call call = new Call(new Number(callid, null, "0:0"));
+            call.addDestination(new Number(destination, datacall, calltime));
+            calls.add(call);
+        }
+    }
+
     public void print(TextField tf, String text){
         tf.setText(text);
     }
 
     /**
      * Convert cell to string
-     * @param cell
+     * @param cell String
      * @return cell format
      */
     private String cellTypeToString( Cell cell) {
@@ -236,8 +275,16 @@ public class AppExp {
     }
 
     private boolean maskNumberInline(String mask, String number){
-        Pattern p = Pattern.compile("<"+mask+">");
+        Pattern p = Pattern.compile(mask);
         Matcher m = p.matcher(number);
         return m.find();
+    }
+
+
+    public void destroy(){
+        DESTROY = true;
+        pauseThread.stop();
+        if(btscan != null)
+            btscan.setDisable(false);
     }
 }
