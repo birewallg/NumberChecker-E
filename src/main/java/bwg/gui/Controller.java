@@ -1,8 +1,6 @@
 package bwg.gui;
 
 import bwg.AppExp;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
@@ -48,15 +46,13 @@ public class Controller {
         detailCheckBox.setOnAction(event -> {
             if (core != null) {
                 textArea.clear();
-                actionCode();
                 core.printAll(detailCheckBox.isSelected());
             }
         });
 
         selectActionCB.setOnAction(event -> {
-            mask_pane.setVisible(false);
+            actionCode();
             actionName = selectActionCB.getValue().toString();
-
         });
     }
 
@@ -99,14 +95,15 @@ public class Controller {
 
 
     private int actionCode(){
+        mask_pane.setVisible(true);
         switch (actionName){
             case "default": {
                 textArea.appendText("Action: \"default\"\n");
                 return 0;
             }
             case "search by mask": {
+                mask_pane.setVisible(false);
                 textArea.appendText("Action: \"search by mask\"\n");
-                mask_pane.setVisible(true);
                 return 1;
             }
             case "time > 15min": {
